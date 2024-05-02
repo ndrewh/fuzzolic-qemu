@@ -4299,10 +4299,10 @@ static uint16_t branch_addr_bitmap[MEMORY_BITMAP_SIZE] = { 0 };
 static inline void branch_helper_internal(uintptr_t a, uintptr_t b,
                                           uintptr_t cond, Expr* expr_a,
                                           Expr* expr_b, size_t size,
-                                          uintptr_t pc, uintptr_t addr_to)
+                                          uintptr_t pc, uintptr_t addr_to, int is_real_branch)
 {
 #if 1
-    if (mode > 0) {
+    if (mode > 0 && !(is_real_branch && pc >= symbolic_start_code && pc < symbolic_end_code)) {
         return;
     }
 #endif
@@ -4332,6 +4332,7 @@ static inline void branch_helper_internal(uintptr_t a, uintptr_t b,
 #if BRANCH_COVERAGE == QSYM
     next_query[0].args8.arg0 = cond == sat_cond; // taken?
     next_query[0].args8.arg1 = (pc > symbolic_end_code || pc < symbolic_start_code); // library?
+    next_query[0].args8.arg2 = is_real_branch; // is real branch?
 #elif BRANCH_COVERAGE == AFL
     next_query[0].args64 = addr_to;
 #elif BRANCH_COVERAGE == FUZZOLIC
@@ -4393,8 +4394,8 @@ static void branch_helper(uintptr_t a, uintptr_t b, uintptr_t cond,
 
     Expr* expr_a = s_temps[a_idx];
     Expr* expr_b = s_temps[b_idx];
-    if (expr_a == NULL && expr_b == NULL)
-        return; // early exit
+    /* if (expr_a == NULL && expr_b == NULL) */
+    /*     return; // early exit */
 
 #if 0
 if (0x400127c2b1 == current_tb_pc) {
@@ -4415,7 +4416,7 @@ if (0x400127c2b1 == current_tb_pc) {
     }
 #endif
 
-    branch_helper_internal(a, b, cond, expr_a, expr_b, size, pc, addr_to);
+    branch_helper_internal(a, b, cond, expr_a, expr_b, size, pc, addr_to, 1);
 
 #if 0
     // if (pc == 0x44B557) {
@@ -4437,7 +4438,7 @@ static void cmov_helper(uintptr_t a, uintptr_t b, uintptr_t cond,
     if (expr_a == NULL && expr_b == NULL)
         return; // early exit
 
-    branch_helper_internal(a, b, cond, expr_a, expr_b, size, pc, addr_to);
+    branch_helper_internal(a, b, cond, expr_a, expr_b, size, pc, addr_to, 0);
 
 #if BRANCH_COVERAGE == FUZZOLIC
     TCGCond sat_cond = check_branch_cond_helper(a, b, cond);

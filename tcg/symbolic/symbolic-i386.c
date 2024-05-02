@@ -1342,7 +1342,7 @@ static void cmpxchg_handler(uint64_t packed_info, uintptr_t a_ptr,
             a_exprs, a_is_not_null, expr_b);
 #endif
         branch_helper_internal(a_val, b_val, TCG_COND_EQ, expr_a, expr_b, 
-                                size == 8 ? 0 : size, pc, addr_to);
+                                size == 8 ? 0 : size, pc, addr_to, 0);
     }
 
 #if DEBUG_EXPR_CONSISTENCY
